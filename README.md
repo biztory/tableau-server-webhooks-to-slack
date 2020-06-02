@@ -1,2 +1,2 @@
-# tableau-server-webhook-demo
-A quick demonstration of how webhooks work
+# tableau-server-webhook-extract-failure
+A quick demonstration of how webhooks work focusing on extract failure notifications
