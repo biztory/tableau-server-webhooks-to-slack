@@ -144,8 +144,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             
             # Parse the JSON
             body_json = json.loads(json.loads(json.dumps(body.decode("utf-8"))))
-            print(body_json)
-            print(type(body_json))
+            # print(body_json)
             resource_name = body_json["resource_name"]
             resource_luid = body_json["resource_luid"]
             site_luid = body_json["site_luid"]
@@ -164,6 +163,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 tableau_server.auth.sign_in_with_personal_access_token(ts_auth)
                 workbook = tableau_server.workbooks.get_by_id(resource_luid)
                 workbook_owner = tableau_server.users.get_by_id(workbook.owner_id)._name
+                workbook_url = workbook.webpage_url
                 tableau_server.workbooks.populate_preview_image(workbook)
                 workbook_image = workbook.preview_image
 
@@ -183,35 +183,20 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
                 try:
 
-                    slack_message_text = workbook_owner + " just published a new workbook to our Tableau Server! It's titled *" + resource_name + "* and here is what it looks like."
-
-                    # This JSON for the message is currenlt unused!
-                    message = {
-                        "channel": args.slack_channel,
-                        "username": "tableau_server_slack",
-                        "icon_emoji": ":robot_face:",
-                        "blocks": [
-                            {
-                                "type": "section",
-                                "text": {
-                                    "type": "mrkdwn",
-                                    "text": slack_message_text,
-                                },
-                            }
-                        ]
-                    }
-
                     slack_web_client = slack.WebClient(token=slack_token)
 
-                    # Get info about the channel first, see if we need to join it.
+                    slack_message_text = workbook_owner + " just published a new workbook to our Tableau Server! It's titled <" + workbook_url + "|*" + resource_name + "*> and here is what it looks like."
 
+                    # Get info about the channel first, see if we need to join it.
                     if not slack_web_client.conversations_info(channel=args.slack_channel)["channel"]["is_member"]:
                         print("Not a member yet, so joining the channel.")
                         slack_web_client.conversations_join(channel=args.slack_channel)
 
+                    # Post!
                     try:
+                        print("Uploading to Slack!")
                         upload_response = slack_web_client.files_upload(file=temp_file, channels=args.slack_channel, initial_comment=slack_message_text) 
-                        print(upload_response)
+                        # print(upload_response)
                     except slack.errors.SlackApiError as e:
                         print(e.response)
 
