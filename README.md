@@ -1,9 +1,15 @@
 # tableau-server-webhooks-to-slack
-This aptly named application is a small server-side Python script that will:
 
-* Create a webhook for you on Tableau Server, for any of the available events
-* Listen to said webhook
-* When the event occurs, capture the relevant information and post that to Slack
+This descriptively named application is a small server-side Python script that will:
+
+* Create a webhook for you on Tableau Server, for any of the available events (or for now: workbook created).
+* Listen to said webhook.
+* When the event occurs, capture the relevant information and post that to Slack.
+
+Potential/planned improvements:
+
+* Handle [all events](https://github.com/tableau/webhooks-docs#events) rather than just workbook created. This probably boils down to first, creating a webhook for each event type (with the same URL/endpoint), and second, adjust how we process a response to handle all cases generically.
+* Extend to work with platforms other than Slack, including e.g. Teams.
 
 ## Architecture
 
@@ -42,7 +48,29 @@ We're authenticating against two services or platforms: Tableau Server and Slack
   * `SLACK_TOKEN`  
 * If neither of the two methods above are used, the script will prompt for the required information.
 
+For Slack, this was developed using a [bot token](https://api.slack.com/authentication/token-types#bot).
+
 ## Usage
+
+### Getting started
+
+* Clone this repository
+* Create a Python [virtualenv](https://docs.python-guide.org/dev/virtualenvs/) and activate it.
+* Install the requirements with pip: `python -m pip install -r requirements.txt`.
+* Provide all the necessary information in `config.ini`:
+  * Tableau Server section:
+    * server: the URL for Tableau Server, including the protocol (http or https) and without trailing slash.
+    * site: the ID from the URL, blank if Default.
+    * pat_name, pat_secret: see the Authentication section above.
+    * ssl_certificates: the path to a certificate or certificate chain, in case the SSL certificate for your Tableau Server is self-signed, or internally signed and not trusted by the regular CAs.
+  * Webhook Configuration section: these are the three parameters passed to the Tableau Server REST API to [create a webhook](https://github.com/tableau/webhooks-docs#curl).
+  * Listener section: this is the HTTPServer component we'll be spinning up. It requires a free port on your server, as well as a certificate and key (and chain) for HTTPS. It doesn't really matter how exactly you obtain these ([certbot](https://certbot.eff.org/) is an option), but they're required as Tableau Server webhooks only reach out to secure endpoints.
+  * Slack section:
+    * slack_workspace: your workspace's name.
+    * slack_channel: the channel ID to post to, which you can also derive from Slack in your browser.
+* Run it: `python tableau_server_webhooks_to_slack.py`.
+
+### Other usage remarks
 
 * This can be run interactively, or probably also [registered as a service](https://blog.frd.mn/how-to-set-up-proper-startstop-services-ubuntu-debian-mac-windows/) though we'd want to verify whether it cleans up the previously created webhook properly. Probably not.
 * To run on port 443 with a virtualenv: `sudo ./.venv/bin/python tableau_server_webhooks_to_slack.py <arguments>`. This is because in Linux, non-root processes are not allowed to bind to port 443.
