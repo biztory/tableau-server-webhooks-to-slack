@@ -11,7 +11,7 @@ import os # because we write the thumbnail of e.g. a new workbook to a temp file
 
 #### Parse config file
 config = configparser.ConfigParser()
-config.read("config.ini")
+config.read("./config.ini")
 
 # Prompt for credentials that weren't included.
 if "pat_name" in config["Tableau Server"]:

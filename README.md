@@ -46,3 +46,7 @@ We're authenticating against two services or platforms: Tableau Server and Slack
 
 * This can be run interactively, or probably also [registered as a service](https://blog.frd.mn/how-to-set-up-proper-startstop-services-ubuntu-debian-mac-windows/) though we'd want to verify whether it cleans up the previously created webhook properly. Probably not.
 * To run on port 443 with a virtualenv: `sudo ./.venv/bin/python tableau_server_webhooks_to_slack.py <arguments>`. This is because in Linux, non-root processes are not allowed to bind to port 443.
+* As a service with systemd, which is ideal... following [these instructions](https://tecadmin.net/setup-autorun-python-script-using-systemd/).
+  * We'll just save the `.service` file to GitHub, in our application directory, and symlink it in `/lib/systemd/system/`.
+  * Start, stop, status with `sudo systemctl start tableau-server-webhooks-to-slack.service`.
+  * View logs with `sudo journalctl -e -u tableau-server-webhooks-to-slack.service`.
