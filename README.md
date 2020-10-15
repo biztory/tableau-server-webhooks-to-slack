@@ -77,4 +77,5 @@ For Slack, this was developed using a [bot token](https://api.slack.com/authenti
 * As a service with systemd, which is ideal... following [these instructions](https://tecadmin.net/setup-autorun-python-script-using-systemd/).
   * We'll just save the `.service` file to GitHub, in our application directory, and symlink it in `/lib/systemd/system/`.
   * Start, stop, status with `sudo systemctl start tableau-server-webhooks-to-slack.service`.
+  * We'll also want to make sure we run python with stdout unbuffered, so the output appears in the journal immediately. `python -u file.py`.
   * View logs with `sudo journalctl -e -u tableau-server-webhooks-to-slack.service`.

@@ -8,7 +8,7 @@ After=syslog.target network.target
 Type=simple
 # User=biztory-cron
 WorkingDirectory=/opt/tableau-server-webhooks-to-slack
-ExecStart=/opt/tableau-server-webhooks-to-slack/.venv/bin/python /opt/tableau-server-webhooks-to-slack/tableau_server_webhooks_to_slack.py
+ExecStart=/opt/tableau-server-webhooks-to-slack/.venv/bin/python -u /opt/tableau-server-webhooks-to-slack/tableau_server_webhooks_to_slack.py
 Restart=always
 # EnvironmentFile=/etc/sysconfig/fooservice.env
 
