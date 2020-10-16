@@ -72,51 +72,35 @@ except Exception as e:
 webhooks = [
     {
         "event_name": "workbook-created",
-        "name": "tswts-workbook-created",
-        "message": "A new workbook was published to our Tableau Server! The owner is ^resource_owner^, and it's titled <^resource_url^>|*^resource_name^*>. Here is what it looks like.",
-        "attachment": True
+        "name": "tswts-workbook-created"
     },
     {
         "event_name": "workbook-updated", 
-        "name": "tswts-workbook-updated",
-        "message": "",
-        "attachment": True
+        "name": "tswts-workbook-updated"
     },
     {
         "event_name": "workbook-deleted", 
-        "name": "tswts-workbook-deleted",
-        "message": "",
-        "attachment": False
+        "name": "tswts-workbook-deleted"
     },
     {
         "event_name": "workbook-refresh-failed", 
-        "name": "tswts-workbook-refresh-failed",
-        "message": "",
-        "attachment": False
+        "name": "tswts-workbook-refresh-failed"
     },
     {
         "event_name": "datasource-created", 
-        "name": "tswts-datasource-created",
-        "message": "",
-        "attachment": False
+        "name": "tswts-datasource-created"
     },
     {
         "event_name": "datasource-updated", 
-        "name": "tswts-datasource-updated",
-        "message": "",
-        "attachment": False
+        "name": "tswts-datasource-updated"
     },
     {
         "event_name": "datasource-deleted", 
-        "name": "tswts-datasource-deleted",
-        "message": "",
-        "attachment": False
+        "name": "tswts-datasource-deleted"
     },
     {
         "event_name": "datasource-refresh-failed", 
-        "name": "tswts-datasource-refresh-failed",
-        "message": "",
-        "attachment": False
+        "name": "tswts-datasource-refresh-failed"
     }
 ]
 
