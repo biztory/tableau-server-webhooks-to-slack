@@ -63,45 +63,16 @@ except Exception as e:
     exit(1)
 
 #### Create webhooks
-# In a future iteration, we will approach this differently:
-# * We will create all webhooks by default, with a fixed set of names e.g. tswts-workbook-created, tswts-workbook-updated, etc. We can loop over a list/dict to create them.
-# * We can allow for exclusions with the config file, removing them from the list if we wish.
-# * We can all point them to the same URL (?) and handle the actions differently based on the body (event_type)
-# * We will also clean them each time we start (not only when we stop) to avoid having duplicates
 
 webhooks = [
-    {
-        "event_name": "workbook-created",
-        "name": "tswts-workbook-created"
-    },
-    {
-        "event_name": "workbook-updated", 
-        "name": "tswts-workbook-updated"
-    },
-    {
-        "event_name": "workbook-deleted", 
-        "name": "tswts-workbook-deleted"
-    },
-    {
-        "event_name": "workbook-refresh-failed", 
-        "name": "tswts-workbook-refresh-failed"
-    },
-    {
-        "event_name": "datasource-created", 
-        "name": "tswts-datasource-created"
-    },
-    {
-        "event_name": "datasource-updated", 
-        "name": "tswts-datasource-updated"
-    },
-    {
-        "event_name": "datasource-deleted", 
-        "name": "tswts-datasource-deleted"
-    },
-    {
-        "event_name": "datasource-refresh-failed", 
-        "name": "tswts-datasource-refresh-failed"
-    }
+    { "event_name": "workbook-created", "name": "tswts-workbook-created" },
+    { "event_name": "workbook-updated", "name": "tswts-workbook-updated" },
+    { "event_name": "workbook-deleted", "name": "tswts-workbook-deleted" },
+    { "event_name": "workbook-refresh-failed", "name": "tswts-workbook-refresh-failed" },
+    { "event_name": "datasource-created", "name": "tswts-datasource-created" },
+    { "event_name": "datasource-updated", "name": "tswts-datasource-updated" },
+    { "event_name": "datasource-deleted", "name": "tswts-datasource-deleted" },
+    { "event_name": "datasource-refresh-failed", "name": "tswts-datasource-refresh-failed" }
 ]
 
 print("Spring cleaning: Deleting existing \"duplicate\" webhooks on Tableau Server, that have the same name.")
@@ -201,7 +172,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             try:
                 
                 # Can only get metadata if it wasn't deleted
-                if event_type not in ["WorkbookDeleted", "DatasourceDeleted"]:
+                if event_type not in ["WorkbookDeleted", "DatasourceDeleted", "WorkbookRefreshFailed", "DatasourceRefreshFailed"]:
                     
                     # Sign in again, get the metadata, etc.
                     tableau_server.auth.sign_in_with_personal_access_token(ts_auth)
@@ -212,8 +183,15 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     ts_resource = ts_resource_endpoint.get_by_id(resource_luid)
                     ts_resource_owner = tableau_server.users.get_by_id(ts_resource.owner_id)._name
                     
-                    # URL if not deleted
-                    ts_resource_url = re.sub("(https?:\/\/[\d\w\-\_\.]+)\/", config["Tableau Server"]["server"] + "/", ts_resource.webpage_url)
+                    # URL if not deleted; different for workbooks than for data sources
+                    if resource_type == "Workbook":
+                        ts_resource_url = re.sub("(https?:\/\/[\d\w\-\_\.]+)\/", config["Tableau Server"]["server"] + "/", ts_resource.webpage_url)
+                    else:
+                        # https://penguin.biztory.com/#/datasources/64/connections
+                        # Default site only for now
+                        # Wait, we can't even do it because TSC doesn't return this ID. Skip for now.
+                        # ts_resource_url = config["Tableau Server"]["server"] + "/#/datasources/" + ts_resource.missing_id + "/connections"
+                        ts_resource_url = config["Tableau Server"]["server"]
                     
                     # Image in workbook, too
                     if resource_type == "Workbook":
@@ -240,7 +218,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     slack_web_client = slack.WebClient(token=slack_token)
 
                     # Message if not deleted
-                    if event_type not in ["WorkbookDeleted", "DatasourceDeleted"]:
+                    if event_type not in ["WorkbookDeleted", "DatasourceDeleted", "WorkbookRefreshFailed", "DatasourceRefreshFailed"]:
                         slack_message_text = "A " + resource_type + " was published or updated on our Tableau Server! The owner is " + ts_resource_owner + " and it's titled <" + ts_resource_url + "|*" + resource_name + "*>."
                         # Message if workbook: add message suffix and image. Also post because the method is different.
                         if resource_type == "Workbook":
@@ -261,6 +239,14 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                                 # print(post_response)
                             except slack.errors.SlackApiError as e:
                                 print(e.response)
+                    elif event_type not in ["WorkbookDeleted", "DatasourceDeleted"]: #i.e. it's a refresh failure
+                        slack_message_text = "Extract refresh failed for *" + resource_name + "*."
+                        try:
+                            print("Posting to Slack!")
+                            post_response = slack_web_client.chat_postMessage(channel=config["Slack"]["slack_channel"], text=slack_message_text)
+                            # print(post_response)
+                        except slack.errors.SlackApiError as e:
+                            print(e.response)
                     else:
                         slack_message_text = "A " + resource_type + " was deleted from our Tableau Server! It was titled *" + resource_name + "*. But yeah, it's gone now."
                         try:
