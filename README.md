@@ -2,13 +2,13 @@
 
 This descriptively named application is a small server-side Python script that will:
 
-* Create a webhook for you on Tableau Server, for any of the available events (or for now: workbook created).
-* Listen to said webhook.
+* Create webhooks for you on Tableau Server, for any of the events supported.
+* Listen to said webhooks.
 * When the event occurs, capture the relevant information and post that to Slack.
 
 Potential/planned improvements:
 
-* Handle [all events](https://github.com/tableau/webhooks-docs#events) rather than just workbook created. This probably boils down to first, creating a webhook for each event type (with the same URL/endpoint), and second, adjust how we process a response to handle all cases generically.
+* ~Handle [all events](https://github.com/tableau/webhooks-docs#events) rather than just workbook created. This probably boils down to first, creating a webhook for each event type (with the same URL/endpoint), and second, adjust how we process a response to handle all cases generically.~ This is done.
 * Extend to work with platforms other than Slack, including e.g. Teams.
 
 ## Architecture
@@ -27,12 +27,12 @@ We're using just a few simple components:
 
 * Get credentials from the appropriate source (see below).
 * Log in to Tableau Server REST API with PAT (diagram, step 1).
-* Create webhook with name, event, URL (diagram, step 2).
+* Create each webhook with name, event, URL (diagram, step 2).
 * Spin up the "listener web server" that listens to said URL, forever (diagram, HTTPServer component).
   * This HTTP Server has a request handler function to receive and process requests from Tableau Server's webhook (diagram, step 3).
   * It then also takes care of fetching additional metadata for the workbook (diagram, step 4), and ...
   * ... of posting to Slack when we have everything (diagram, step 5).
-* When the script is terminated with a KeyboardInterrupt, delete the webhook we created previously.
+* When the script is terminated with a KeyboardInterrupt, delete the webhooks we created previously.
 
 ## Authentication
 
@@ -63,7 +63,7 @@ For Slack, this was developed using a [bot token](https://api.slack.com/authenti
     * site: the ID from the URL, blank if Default.
     * pat_name, pat_secret: see the Authentication section above.
     * ssl_certificates: the path to a certificate or certificate chain, in case the SSL certificate for your Tableau Server is self-signed, or internally signed and not trusted by the regular CAs.
-  * Webhook Configuration section: these are the three parameters passed to the Tableau Server REST API to [create a webhook](https://github.com/tableau/webhooks-docs#curl).
+  * ~Webhook Configuration section: these are the three parameters passed to the Tableau Server REST API to [create a webhook](https://github.com/tableau/webhooks-docs#curl).~ These are now aprt of the script and have fixed names, except the webhook_url setting.
   * Listener section: this is the HTTPServer component we'll be spinning up. It requires a free port on your server, as well as a certificate and key (and chain) for HTTPS. It doesn't really matter how exactly you obtain these ([certbot](https://certbot.eff.org/) is an option), but they're required as Tableau Server webhooks only reach out to secure endpoints.
   * Slack section:
     * slack_workspace: your workspace's name.
@@ -72,7 +72,6 @@ For Slack, this was developed using a [bot token](https://api.slack.com/authenti
 
 ### Other usage remarks
 
-* This can be run interactively, or probably also [registered as a service](https://blog.frd.mn/how-to-set-up-proper-startstop-services-ubuntu-debian-mac-windows/) though we'd want to verify whether it cleans up the previously created webhook properly. Probably not.
 * To run on port 443 with a virtualenv: `sudo ./.venv/bin/python tableau_server_webhooks_to_slack.py <arguments>`. This is because in Linux, non-root processes are not allowed to bind to port 443.
 * As a service with systemd, which is ideal... following [these instructions](https://tecadmin.net/setup-autorun-python-script-using-systemd/).
   * We'll just save the `.service` file to GitHub, in our application directory, and symlink it in `/lib/systemd/system/`.
